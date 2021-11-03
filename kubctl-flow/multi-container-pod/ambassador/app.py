@@ -6,14 +6,16 @@ from datetime import datetime
 app = Flask(__name__)
 cache = redis.Redis(host='localhost', port=6379)
 
-def get_secret():
+def get_last_visited():
     try:
-        secret = cache.get('secret')
-        return secret
+        last_visited = cache.getset('last_visited',str(datetime.now().strftime("%Y-%m-%d, %H:%M:%S")))
+        if last_visited is None:
+            return cache.getset('last_visited',str(datetime.now().strftime("%Y-%m-%d, %H:%M:%S")))
+        return last_visited
     except redis.exceptions.ConnectionError as e:
         raise e
 
 @app.route('/')
 def index():
-    secret = str(get_secret().decode('utf-8'))
-    return 'Hi there! The secret is {}.\n'.format(secret)
+    last_visited = str(get_last_visited().decode('utf-8'))
+    return 'Hi there! This page was last visited on {}.\n'.format(last_visited)
